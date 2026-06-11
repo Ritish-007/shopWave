@@ -10,8 +10,23 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ── CORS ──────────────────────────────────────────────────────
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : []),
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow localhost dev
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow any *.vercel.app deployment
+    if (/^https:\/\/[\w-]+\.vercel\.app$/.test(origin)) return callback(null, true);
+    // Block everything else
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 
