@@ -138,8 +138,21 @@ export default function Navbar() {
                       }}
                       id="dropdown-edit-btn"
                     >
-                      Edit Details
+                      ✏️ Edit Details
                     </button>
+                    {isAdmin && (
+                      <button
+                        className="nav-dropdown-item"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          navigate('/admin');
+                        }}
+                        id="dropdown-admin-btn"
+                      >
+                        🛠️ Admin Panel
+                      </button>
+                    )}
+                    <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0' }} />
                     <button
                       className="nav-dropdown-item logout-item"
                       onClick={() => {

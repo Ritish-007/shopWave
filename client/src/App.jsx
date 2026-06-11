@@ -26,51 +26,55 @@ import AdminOrders from './pages/AdminOrders';
 function AppInner() {
   const dispatch = useDispatch();
 
+  // Helper to fetch the profile row and dispatch it
+  // Returns true if profile was set successfully
+  async function loadProfile(userId, session) {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      if (error) {
+        console.warn('Profile fetch error (non-fatal):', error.message);
+        // Fallback: build a minimal profile from session metadata
+        const meta = session?.user?.user_metadata || {};
+        dispatch(setProfile({
+          id: userId,
+          full_name: meta.full_name || meta.name || null,
+          role: meta.role || 'customer',
+        }));
+        return false;
+      }
+      if (profile) {
+        dispatch(setProfile(profile));
+        return true;
+      }
+    } catch (err) {
+      console.warn('loadProfile threw:', err);
+    }
+    return false;
+  }
+
   useEffect(() => {
     // Initialize auth from existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       try {
         if (session?.user) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          if (error) {
-            console.error('Error fetching profile on init:', error);
-          }
-          if (profile) dispatch(setProfile(profile));
+          await loadProfile(session.user.id, session);
         }
-      } catch (err) {
-        console.error('Failed to initialize session profile:', err);
       } finally {
         dispatch(setSession(session));
       }
     });
 
-    // Listen for auth changes
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      try {
-        if (event === 'SIGNED_OUT') {
-          dispatch(clearAuth());
-        } else if (session) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          if (error) {
-            console.error('Error fetching profile on auth change:', error);
-          }
-          if (profile) dispatch(setProfile(profile));
-          dispatch(setSession(session));
-        }
-      } catch (err) {
-        console.error('Error handling auth state change:', err);
-        // Fallback: still dispatch session if we have it
-        if (session) {
-          dispatch(setSession(session));
-        }
+      if (event === 'SIGNED_OUT') {
+        dispatch(clearAuth());
+      } else if (session?.user) {
+        await loadProfile(session.user.id, session);
+        dispatch(setSession(session));
       }
     });
 
