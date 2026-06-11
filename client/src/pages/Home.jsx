@@ -16,6 +16,7 @@ export default function Home() {
 
   return (
     <main>
+
       {/* Hero — clean text-only */}
       <section className="hero">
         <div className="container">

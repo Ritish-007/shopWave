@@ -1,13 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { supabase } from '../lib/supabase';
-import { setSession, setProfile } from '../features/authSlice';
+import { selectUser } from '../features/authSlice';
 
 export default function Register() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const user = useSelector(selectUser);
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
